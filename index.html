@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>liweimin - 个人主页</title>
+    <!-- 引入Vue 3和Vue Router -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/vue-router@4/dist/vue-router.global.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --text-color: #333;
+            --border-radius: 8px;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            line-height: 1.6;
+            color: var(--text-color);
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+
+        /* 导航栏 */
+        .navbar {
+            background: rgba(44, 62, 80, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 0.8rem 2rem;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition);
+        }
+
+        .navbar.scrolled {
+            padding: 0.6rem 2rem;
+            background: rgba(44, 62, 80, 0.98);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.4rem;
+        }
+
+        .logo i {
+            margin-right: 10px;
+            color: var(--secondary-color);
+            font-size: 1.6rem;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            position: relative;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 0.8rem 1.5rem;
+            transition: var(--transition);
+            border-radius: 6px;
+            margin: 0 5px;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .nav-links a i {
+            margin-right: 8px;
+            font-size: 1.1rem;
+            transition: var(--transition);
+        }
+
+        .nav-links a:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--secondary-color);
+            z-index: -1;
+            border-radius: 6px;
+            transform: scale(0.9);
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .nav-links a:hover:before,
+        .nav-links a.router-link-active:before {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .nav-links a:hover,
+        .nav-links a.router-link-active {
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .nav-links a:hover i,
+        .nav-links a.router-link-active i {
+            transform: scale(1.2);
+        }
+
+        /* 活动指示器 */
+        .active-indicator {
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            height: 3px;
+            background: var(--secondary-color);
+            border-radius: 3px;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 1001;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .mobile-menu-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .theme-toggle {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-left: 15px;
+            transition: var(--transition);
+        }
+
+        .theme-toggle:hover {
+            background: var(--secondary-color);
+            transform: rotate(30deg);
+        }
+
+        /* 主要内容容器 */
+        .container {
+            max-width: 1200px;
+            margin: 100px auto 20px;
+            padding: 2rem;
+            min-height: calc(100vh - 160px);
+        }
+
+        /* 页面内容 */
+        .page-content {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 2.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.6s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 首页样式 */
+        .post-list {
+            display: grid;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .post-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: var(--transition);
+            border-left: 4px solid var(--secondary-color);
+        }
+
+        .post-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .post-date {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .post-date i {
+            margin-right: 8px;
+            color: var(--secondary-color);
+        }
+
+        .post-excerpt {
+            margin: 1rem 0;
+            color: #555;
+        }
+
+        .post-excerpt a {
+            color: var(--secondary-color);
+            text-decoration: none;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            margin: 0.8rem 0;
+            padding: 0.8rem;
+            border-radius: 6px;
+            transition: var(--transition);
+            background: rgba(52, 152, 219, 0.1);
+        }
+
+        .post-excerpt a i {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+
+        .post-excerpt a:hover {
+            background: rgba(52, 152, 219, 0.2);
+            transform: translateX(5px);
+        }
+
+        /* 联系页面样式 */
+        .contact-section {
+            margin-bottom: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .contact-section:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .contact-section h2 {
+            color: var(--dark-color);
+            margin-top: 0;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--accent-color);
+            display: flex;
+            align-items: center;
+        }
+
+        .contact-section h2 i {
+            margin-right: 10px;
+            color: var(--accent-color);
+        }
+
+        .contact-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .contact-info img {
+            width: 100px;
+            height: 100px;
+            margin-right: 20px;
+            border-radius: 10px;
+            border: 2px solid #ddd;
+            transition: var(--transition);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .contact-info img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        a {
+            color: #2980b9;
+            text-decoration: none;
+            font-weight: bold;
+            transition: var(--transition);
+        }
+
+        a:hover {
+            color: var(--accent-color);
+            text-decoration: underline;
+        }
+
+        /* 页脚 */
+        footer {
+            background: var(--primary-color);
+            color: white;
+            text-align: center;
+            padding: 1.8rem;
+            margin-top: 3rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .social-links {
+            display: flex;
+            justify-content: center;
+            margin: 15px 0;
+        }
+
+        .social-links a {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 10px;
+            transition: var(--transition);
+        }
+
+        .social-links a:hover {
+            background: var(--secondary-color);
+            transform: translateY(-5px);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 0.8rem 1.5rem;
+            }
+            
+            .container {
+                padding: 1rem;
+                margin-top: 90px;
+            }
+            
+            .page-content {
+                padding: 1.8rem;
+            }
+            
+            .nav-links {
+                position: fixed;
+                top: 70px;
+                left: -100%;
+                flex-direction: column;
+                background: rgba(44, 62, 80, 0.98);
+                width: 100%;
+                text-align: center;
+                transition: 0.5s;
+                box-shadow: 0 10px 27px rgba(0, 0, 0, 0.05);
+                padding: 1rem 0;
+                height: calc(100vh - 70px);
+                justify-content: flex-start;
+                z-index: 999;
+            }
+            
+            .nav-links.active {
+                left: 0;
+            }
+            
+            .nav-links a {
+                margin: 1rem 0;
+                padding: 1.2rem;
+                justify-content: center;
+                font-size: 1.2rem;
+                border-radius: 0;
+                width: 100%;
+            }
+            
+            .nav-links a:before {
+                border-radius: 0;
+            }
+            
+            .mobile-menu-btn {
+                display: flex;
+            }
+            
+            .active-indicator {
+                display: none;
+            }
+            
+            .contact-info {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .contact-info img {
+                margin-right: 0;
+                margin-bottom: 20px;
+            }
+        }
+
+        /* 暗色主题 */
+        .dark-theme {
+            --primary-color: #1a2530;
+            --secondary-color: #2980b9;
+            --light-color: #2c3e50;
+            --text-color: #ecf0f1;
+            background: linear-gradient(135deg, #1a2530 0%, #2c3e50 100%);
+        }
+        
+        .dark-theme .page-content {
+            background: rgba(44, 62, 80, 0.9);
+            color: #ecf0f1;
+        }
+        
+        .dark-theme .post-card {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        }
+        
+        .dark-theme .contact-section {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        }
+
+        /* 过渡动画 */
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.4s, transform 0.4s;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--secondary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        h1 i {
+            margin-right: 15px;
+            color: var(--secondary-color);
+        }
+        
+        /* 菜单关闭按钮 */
+        .close-menu {
+            display: none;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        @media (max-width: 768px) {
+            .close-menu {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- 导航栏 -->
+        <nav class="navbar" :class="{ scrolled: isScrolled }">
+            <router-link to="/" class="logo">
+                <i class="fas fa-user"></i>
+                <span>liweimin</span>
+            </router-link>
+            
+            <ul class="nav-links" :class="{ active: mobileMenuOpen }" ref="navLinks">
+                <div class="active-indicator" :style="indicatorStyle"></div>
+                <li><router-link to="/" @click="closeMobileMenu"><i class="fas fa-home"></i>首页</router-link></li>
+                <li><router-link to="/contact" @click="closeMobileMenu"><i class="fas fa-address-card"></i>联系方式</router-link></li>
+                <button class="close-menu" @click="closeMobileMenu">
+                    <i class="fas fa-times"></i>
+                </button>
+            </ul>
+            
+            <div class="nav-controls">
+                <button class="theme-toggle" @click="toggleTheme">
+                    <i :class="isDarkTheme ? 'fas fa-sun' : 'fas fa-moon'"></i>
+                </button>
+                <button class="mobile-menu-btn" @click="toggleMobileMenu">
+                    <i class="fas" :class="mobileMenuOpen ? 'fa-times' : 'fa-bars'"></i>
+                </button>
+            </div>
+        </nav>
+        
+        <!-- 路由视图 -->
+        <div class="container">
+            <router-view v-slot="{ Component }">
+                <transition name="fade" mode="out-in">
+                    <component :is="Component" />
+                </transition>
+            </router-view>
+        </div>
+        
+        <footer>
+            <div class="social-links">
+                <a href="#"><i class="fab fa-github"></i></a>
+                <a href="#"><i class="fab fa-weixin"></i></a>
+                <a href="#"><i class="fab fa-qq"></i></a>
+                <a href="#"><i class="fab fa-weibo"></i></a>
+            </div>
+            <p>&copy; 2025 liweimin 版权所有</p>
+        </footer>
+    </div>
+
+    <script type="module">
+        const { createApp, ref, onMounted, onUnmounted, computed, watch, nextTick } = Vue;
+        const { createRouter, createWebHashHistory, useRoute } = VueRouter;
+        
+        // 使用动态导入加载组件
+        const routes = [
+            { 
+                path: '/', 
+                component: () => import('./home.js').then(m => m.default || m)
+            },
+            { 
+                path: '/contact', 
+                component: () => import('./contact.js').then(m => m.default || m)
+            }
+        ];
+        
+        // 创建路由实例
+        const router = createRouter({
+            history: createWebHashHistory(),
+            routes
+        });
+        
+        // 创建Vue应用
+        const app = createApp({
+            setup() {
+                const isScrolled = ref(false);
+                const mobileMenuOpen = ref(false);
+                const isDarkTheme = ref(false);
+                const navLinks = ref(null);
+                const route = useRoute();
+                
+                const activeLinkIndex = computed(() => {
+                    return route.path === '/contact' ? 1 : 0;
+                });
+                
+                const indicatorStyle = computed(() => {
+                    if (!navLinks.value) return {};
+                    
+                    const links = navLinks.value.querySelectorAll('a');
+                    if (links.length === 0) return {};
+                    
+                    const activeLink = links[activeLinkIndex.value];
+                    return {
+                        width: `${activeLink.offsetWidth}px`,
+                        transform: `translateX(${activeLink.offsetLeft}px)`
+                    };
+                });
+                
+                const handleScroll = () => {
+                    isScrolled.value = window.scrollY > 20;
+                };
+                
+                const toggleMobileMenu = () => {
+                    mobileMenuOpen.value = !mobileMenuOpen.value;
+                    // 防止页面滚动当菜单打开时
+                    document.body.style.overflow = mobileMenuOpen.value ? 'hidden' : '';
+                };
+                
+                const closeMobileMenu = () => {
+                    mobileMenuOpen.value = false;
+                    document.body.style.overflow = '';
+                };
+                
+                const toggleTheme = () => {
+                    isDarkTheme.value = !isDarkTheme.value;
+                    document.body.classList.toggle('dark-theme', isDarkTheme.value);
+                    // 保存主题偏好到localStorage
+                    localStorage.setItem('darkTheme', isDarkTheme.value);
+                };
+                
+                onMounted(() => {
+                    window.addEventListener('scroll', handleScroll);
+                    
+                    // 检查保存的主题偏好
+                    const savedTheme = localStorage.getItem('darkTheme');
+                    if (savedTheme !== null) {
+                        isDarkTheme.value = savedTheme === 'true';
+                        document.body.classList.toggle('dark-theme', isDarkTheme.value);
+                    }
+                });
+                
+                onUnmounted(() => {
+                    window.removeEventListener('scroll', handleScroll);
+                });
+                
+                // 监听路由变化，更新指示器位置
+                watch(() => route.path, async () => {
+                    await nextTick();
+                    // 在移动设备上，路由变化时关闭菜单
+                    if (window.innerWidth <= 768) {
+                        closeMobileMenu();
+                    }
+                });
+                
+                return {
+                    isScrolled,
+                    mobileMenuOpen,
+                    isDarkTheme,
+                    navLinks,
+                    indicatorStyle,
+                    toggleMobileMenu,
+                    closeMobileMenu,
+                    toggleTheme
+                };
+            }
+        });
+        
+        app.use(router);
+        app.mount('#app');
+    </script>
+</body>
+</html>
