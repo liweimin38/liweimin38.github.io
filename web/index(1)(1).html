@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图像块分割与重排工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #ddd;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .controls {
+            flex: 1;
+            min-width: 300px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .preview {
+            flex: 2;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .image-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .image-box {
+            width: 100%;
+            height: 300px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        
+        .image-box img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .image-placeholder {
+            color: rgba(255, 255, 255, 0.5);
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(1px);
+        }
+        
+        .btn-full {
+            width: 100%;
+            margin-top: 15px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+        
+        .control-group {
+            margin-bottom: 25px;
+        }
+        
+        .control-title {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: #3498db;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .control-title i {
+            font-size: 1.5rem;
+        }
+        
+        .slider-container {
+            margin-bottom: 20px;
+        }
+        
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .slider-value {
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .pattern-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .pattern-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        
+        .pattern-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .pattern-btn.active {
+            border-color: #3498db;
+            background: rgba(52, 152, 219, 0.2);
+        }
+        
+        .pattern-preview {
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            margin-bottom: 5px;
+            display: flex;
+            flex-wrap: wrap;
+            overflow: hidden;
+        }
+        
+        .pattern-block {
+            flex: 1;
+            min-width: 20%;
+            height: 100%;
+            background: #3498db;
+            opacity: 0.7;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>图像块分割与重排工具</h1>
+            <p class="subtitle">上传图像，将其分割成多个块，然后重新排列这些块以创建独特的视觉效果。调整参数并尝试不同的排列模式。</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="controls">
+                <div class="control-group">
+                    <h2 class="control-title">
+                        <i>📁</i> 图像上传
+                    </h2>
+                    <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+                    <button class="btn btn-full" id="uploadBtn">
+                        <i>📤</i> 选择图像
+                    </button>
+                </div>
+                
+                <div class="control-group">
+                    <h2 class="control-title">
+                        <i>🔧</i> 分割设置
+                    </h2>
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>行数:</span>
+                            <span class="slider-value" id="rowsValue">4</span>
+                        </div>
+                        <input type="range" id="rowsSlider" min="2" max="16" value="4">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>列数:</span>
+                            <span class="slider-value" id="colsValue">4</span>
+                        </div>
+                        <input type="range" id="colsSlider" min="2" max="16" value="4">
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h2 class="control-title">
+                        <i>🔄</i> 重排模式
+                    </h2>
+                    <div class="pattern-selector">
+                        <div class="pattern-btn active" data-pattern="random">
+                            <div class="pattern-preview">
+                                <div class="pattern-block"></div>
+                                <div class="pattern-block"></div>
+                                <div class="pattern-block"></div>
+                                <div class="pattern-block"></div>
+                                <div class="pattern-block"></div>
+                                <div class="pattern-block"></div>
+                                <div class="pattern-block"></div>
+                                <div class="pattern-block"></div>
+                                <div class="pattern-block"></div>
+                            </div>
+                            <div>随机</div>
+                        </div>
+                        <div class="pattern-btn" data-pattern="reverse">
+                            <div class="pattern-preview">
+                                <div class="pattern-block" style="background: #e74c3c;"></div>
+                                <div class="pattern-block" style="background: #e74c3c;"></div>
+                                <div class="pattern-block" style="background: #e74c3c;"></div>
+                                <div class="pattern-block" style="background: #3498db;"></div>
+                                <div class="pattern-block" style="background: #3498db;"></div>
+                                <div class="pattern-block" style="background: #3498db;"></div>
+                                <div class="pattern-block" style="background: #2ecc71;"></div>
+                                <div class="pattern-block" style="background: #2ecc71;"></div>
+                                <div class="pattern-block" style="background: #2ecc71;"></div>
+                            </div>
+                            <div>反转</div>
+                        </div>
+                        <div class="pattern-btn" data-pattern="diagonal">
+                            <div class="pattern-preview">
+                                <div class="pattern-block" style="background: #e74c3c;"></div>
+                                <div class="pattern-block" style="background: #3498db;"></div>
+                                <div class="pattern-block" style="background: #2ecc71;"></div>
+                                <div class="pattern-block" style="background: #3498db;"></div>
+                                <div class="pattern-block" style="background: #2ecc71;"></div>
+                                <div class="pattern-block" style="background: #e74c3c;"></div>
+                                <div class="pattern-block" style="background: #2ecc71;"></div>
+                                <div class="pattern-block" style="background: #e74c3c;"></div>
+                                <div class="pattern-block" style="background: #3498db;"></div>
+                            </div>
+                            <div>对角线</div>
+                        </div>
+                        <div class="pattern-btn" data-pattern="spiral">
+                            <div class="pattern-preview">
+                                <div class="pattern-block" style="background: #e74c3c;"></div>
+                                <div class="pattern-block" style="background: #e74c3c;"></div>
+                                <div class="pattern-block" style="background: #e74c3c;"></div>
+                                <div class="pattern-block" style="background: #3498db;"></div>
+                                <div class="pattern-block" style="background: #2ecc71;"></div>
+                                <div class="pattern-block" style="background: #3498db;"></div>
+                                <div class="pattern-block" style="background: #3498db;"></div>
+                                <div class="pattern-block" style="background: #3498db;"></div>
+                                <div class="pattern-block" style="background: #2ecc71;"></div>
+                            </div>
+                            <div>螺旋</div>
+                        </div>
+                        <div class="pattern-btn" data-pattern="checker">
+                            <div class="pattern-preview">
+                                <div class="pattern-block" style="background: #e74c3c;"></div>
+                                <div class="pattern-block" style="background: #3498db;"></div>
+                                <div class="pattern-block" style="background: #e74c3c;"></div>
+                                <div class="pattern-block" style="background: #3498db;"></div>
+                                <div class="pattern-block" style="background: #2ecc71;"></div>
+                                <div class="pattern-block" style="background: #3498db;"></div>
+                                <div class="pattern-block" style="background: #e74c3c;"></div>
+                                <div class="pattern-block" style="background: #3498db;"></div>
+                                <div class="pattern-block" style="background: #e74c3c;"></div>
+                            </div>
+                            <div>棋盘</div>
+                        </div>
+                        <div class="pattern-btn" data-pattern="shuffle">
+                            <div class="pattern-preview">
+                                <div class="pattern-block" style="background: #e74c3c;"></div>
+                                <div class="pattern-block" style="background: #2ecc71;"></div>
+                                <div class="pattern-block" style="background: #3498db;"></div>
+                                <div class="pattern-block" style="background: #2ecc71;"></div>
+                                <div class="pattern-block" style="background: #e74c3c;"></div>
+                                <div class="pattern-block" style="background: #3498db;"></div>
+                                <div class="pattern-block" style="background: #3498db;"></div>
+                                <div class="pattern-block" style="background: #e74c3c;"></div>
+                                <div class="pattern-block" style="background: #2ecc71;"></div>
+                            </div>
+                            <div>洗牌</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h2 class="control-title">
+                        <i>🎨</i> 处理选项
+                    </h2>
+                    <button class="btn btn-full" id="processBtn">
+                        <i>🔄</i> 处理图像
+                    </button>
+                    <button class="btn btn-full btn-primary" id="downloadBtn" disabled>
+                        <i>💾</i> 下载结果
+                    </button>
+                    <button class="btn btn-full" id="resetBtn">
+                        <i>🔄</i> 重置
+                    </button>
+                </div>
+            </div>
+            
+            <div class="preview">
+                <div class="image-container">
+                    <h2 class="control-title">
+                        <i>🖼️</i> 原始图像
+                    </h2>
+                    <div class="image-box" id="originalImage">
+                        <div class="image-placeholder">
+                            <p>📷</p>
+                            <p>请上传图像</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="image-container">
+                    <h2 class="control-title">
+                        <i>✨</i> 处理后图像
+                    </h2>
+                    <div class="image-box" id="processedImage">
+                        <div class="image-placeholder">
+                            <p>🔄</p>
+                            <p>处理后图像将显示在这里</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>图像块分割与重排工具 &copy; 2023 | 使用HTML5 Canvas实现</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取DOM元素
+            const uploadBtn = document.getElementById('uploadBtn');
+            const imageUpload = document.getElementById('imageUpload');
+            const originalImageBox = document.getElementById('originalImage');
+            const processedImageBox = document.getElementById('processedImage');
+            const processBtn = document.getElementById('processBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const rowsSlider = document.getElementById('rowsSlider');
+            const colsSlider = document.getElementById('colsSlider');
+            const rowsValue = document.getElementById('rowsValue');
+            const colsValue = document.getElementById('colsValue');
+            const patternBtns = document.querySelectorAll('.pattern-btn');
+            
+            let originalImage = null;
+            let processedImage = null;
+            let currentPattern = 'random';
+            
+            // 事件监听器
+            uploadBtn.addEventListener('click', () => imageUpload.click());
+            imageUpload.addEventListener('change', handleImageUpload);
+            processBtn.addEventListener('click', processImage);
+            downloadBtn.addEventListener('click', downloadImage);
+            resetBtn.addEventListener('click', resetApp);
+            
+            rowsSlider.addEventListener('input', () => {
+                rowsValue.textContent = rowsSlider.value;
+            });
+            
+            colsSlider.addEventListener('input', () => {
+                colsValue.textContent = colsSlider.value;
+            });
+            
+            patternBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    patternBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentPattern = btn.getAttribute('data-pattern');
+                });
+            });
+            
+            // 处理图像上传
+            function handleImageUpload(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    originalImage = new Image();
+                    originalImage.onload = function() {
+                        originalImageBox.innerHTML = '';
+                        originalImageBox.appendChild(originalImage);
+                        processedImageBox.innerHTML = '<div class="image-placeholder"><p>🔄</p><p>处理后图像将显示在这里</p></div>';
+                        downloadBtn.disabled = true;
+                    };
+                    originalImage.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+            
+            // 处理图像
+            function processImage() {
+                if (!originalImage) {
+                    alert('请先上传图像！');
+                    return;
+                }
+                
+                const rows = parseInt(rowsSlider.value);
+                const cols = parseInt(colsSlider.value);
+                
+                // 创建画布
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = originalImage.width;
+                canvas.height = originalImage.height;
+                
+                // 绘制原始图像
+                ctx.drawImage(originalImage, 0, 0);
+                
+                // 获取图像数据
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                
+                // 计算每个块的大小
+                const blockWidth = Math.floor(canvas.width / cols);
+                const blockHeight = Math.floor(canvas.height / rows);
+                
+                // 创建块数组
+                const blocks = [];
+                
+                // 分割图像为块
+                for (let y = 0; y < rows; y++) {
+                    for (let x = 0; x < cols; x++) {
+                        const blockData = ctx.getImageData(
+                            x * blockWidth, 
+                            y * blockHeight, 
+                            blockWidth, 
+                            blockHeight
+                        );
+                        blocks.push({
+                            data: blockData,
+                            x: x,
+                            y: y
+                        });
+                    }
+                }
+                
+                // 根据选择的模式重新排列块
+                const rearrangedBlocks = rearrangeBlocks(blocks, rows, cols, currentPattern);
+                
+                // 清空画布
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // 绘制重新排列的块
+                rearrangedBlocks.forEach(block => {
+                    ctx.putImageData(block.data, block.x * blockWidth, block.y * blockHeight);
+                });
+                
+                // 创建处理后的图像
+                processedImage = new Image();
+                processedImage.onload = function() {
+                    processedImageBox.innerHTML = '';
+                    processedImageBox.appendChild(processedImage);
+                    downloadBtn.disabled = false;
+                };
+                processedImage.src = canvas.toDataURL('image/png');
+            }
+            
+            // 重新排列块
+            function rearrangeBlocks(blocks, rows, cols, pattern) {
+                const totalBlocks = blocks.length;
+                const rearranged = [...blocks];
+                
+                switch(pattern) {
+                    case 'random':
+                        // 随机排列
+                        for (let i = totalBlocks - 1; i > 0; i--) {
+                            const j = Math.floor(Math.random() * (i + 1));
+                            [rearranged[i], rearranged[j]] = [rearranged[j], rearranged[i]];
+                        }
+                        break;
+                        
+                    case 'reverse':
+                        // 反转顺序
+                        rearranged.reverse();
+                        break;
+                        
+                    case 'diagonal':
+                        // 对角线交换
+                        for (let i = 0; i < totalBlocks; i++) {
+                            const x = i % cols;
+                            const y = Math.floor(i / cols);
+                            
+                            if (x === y) {
+                                // 对角线上的块保持不变
+                                continue;
+                            }
+                            
+                            const swapIndex = y * cols + x;
+                            if (swapIndex < totalBlocks) {
+                                [rearranged[i], rearranged[swapIndex]] = [rearranged[swapIndex], rearranged[i]];
+                            }
+                        }
+                        break;
+                        
+                    case 'spiral':
+                        // 螺旋排列
+                        const spiralOrder = [];
+                        let top = 0, bottom = rows - 1, left = 0, right = cols - 1;
+                        
+                        while (top <= bottom && left <= right) {
+                            // 从左到右
+                            for (let i = left; i <= right; i++) {
+                                spiralOrder.push(top * cols + i);
+                            }
+                            top++;
+                            
+                            // 从上到下
+                            for (let i = top; i <= bottom; i++) {
+                                spiralOrder.push(i * cols + right);
+                            }
+                            right--;
+                            
+                            // 从右到左
+                            if (top <= bottom) {
+                                for (let i = right; i >= left; i--) {
+                                    spiralOrder.push(bottom * cols + i);
+                                }
+                                bottom--;
+                            }
+                            
+                            // 从下到上
+                            if (left <= right) {
+                                for (let i = bottom; i >= top; i--) {
+                                    spiralOrder.push(i * cols + left);
+                                }
+                                left++;
+                            }
+                        }
+                        
+                        // 重新排列块
+                        const spiralBlocks = [];
+                        for (let i = 0; i < totalBlocks; i++) {
+                            spiralBlocks.push(rearranged[spiralOrder[i]]);
+                        }
+                        return spiralBlocks;
+                        
+                    case 'checker':
+                        // 棋盘模式 - 交替交换
+                        for (let i = 0; i < totalBlocks; i++) {
+                            const x = i % cols;
+                            const y = Math.floor(i / cols);
+                            
+                            if ((x + y) % 2 === 0) {
+                                // 找到对应的奇数位置进行交换
+                                const swapIndex = (y * cols) + ((x + 1) % cols);
+                                if (swapIndex < totalBlocks) {
+                                    [rearranged[i], rearranged[swapIndex]] = [rearranged[swapIndex], rearranged[i]];
+                                }
+                            }
+                        }
+                        break;
+                        
+                    case 'shuffle':
+                        // 洗牌模式 - 行内洗牌
+                        for (let row = 0; row < rows; row++) {
+                            const rowStart = row * cols;
+                            const rowEnd = rowStart + cols;
+                            const rowBlocks = rearranged.slice(rowStart, rowEnd);
+                            
+                            // 洗牌当前行的块
+                            for (let i = rowBlocks.length - 1; i > 0; i--) {
+                                const j = Math.floor(Math.random() * (i + 1));
+                                [rowBlocks[i], rowBlocks[j]] = [rowBlocks[j], rowBlocks[i]];
+                            }
+                            
+                            // 将洗牌后的行放回数组
+                            for (let i = 0; i < rowBlocks.length; i++) {
+                                rearranged[rowStart + i] = rowBlocks[i];
+                            }
+                        }
+                        break;
+                }
+                
+                return rearranged;
+            }
+            
+            // 下载图像
+            function downloadImage() {
+                if (!processedImage) return;
+                
+                const link = document.createElement('a');
+                link.download = 'processed-image.png';
+                link.href = processedImage.src;
+                link.click();
+            }
+            
+            // 重置应用
+            function resetApp() {
+                originalImageBox.innerHTML = '<div class="image-placeholder"><p>📷</p><p>请上传图像</p></div>';
+                processedImageBox.innerHTML = '<div class="image-placeholder"><p>🔄</p><p>处理后图像将显示在这里</p></div>';
+                imageUpload.value = '';
+                originalImage = null;
+                processedImage = null;
+                downloadBtn.disabled = true;
+                rowsSlider.value = 4;
+                colsSlider.value = 4;
+                rowsValue.textContent = '4';
+                colsValue.textContent = '4';
+                
+                patternBtns.forEach(btn => btn.classList.remove('active'));
+                document.querySelector('.pattern-btn[data-pattern="random"]').classList.add('active');
+                currentPattern = 'random';
+            }
+        });
+    </script>
+</body>
+</html>
